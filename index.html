@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Défense de Paris">
+<meta property="og:description" content="Napoleon or a medieval crusader hold Place de la Concorde against zombies and an alien invasion. Free 3D wave shooter in your browser, on desktop and phone.">
+<meta property="og:image" content="https://skriptkiddy98x.github.io/defense-de-paris/cover.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Défense de Paris">
+<meta name="twitter:description" content="Napoleon or a medieval crusader hold Place de la Concorde against zombies and an alien invasion. Free 3D wave shooter in your browser, on desktop and phone.">
+<meta name="twitter:image" content="https://skriptkiddy98x.github.io/defense-de-paris/cover.jpg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="canonical" href="https://skriptkiddy98x.github.io/defense-de-paris/">
+<title>Défense de Paris</title>
+<meta name="description" content="Napoleon or a medieval crusader hold Place de la Concorde against zombies and an alien invasion. Free browser shooter for keyboard, mouse and touch.">
+<meta name="ddp-share-url" content="https://skriptkiddy98x.github.io/defense-de-paris/">
+<meta name="theme-color" content="#0b0e15">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IM+Fell+English+SC&display=swap">
+<style>
+/* Layout: full-bleed WebGL street; HUD pinned to the four corners like a field instrument; the menu is a war-office dossier laid over dusk Paris */
+:root{
+  --night:#0b0e15;
+  --glass:rgba(11,14,21,.68);
+  --rule:rgba(236,228,207,.16);
+  --paper:#ece4cf;
+  --dim:#a8a08c;
+  --bleu:#6a90f0;
+  --rouge:#e1493f;
+  --or:#dcb058;
+  --alien:#b98cff;
+  --toxic:#b6f04a;
+  --f-title:"IM Fell English SC","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --f-hud:"Barlow Condensed","Arial Narrow","Roboto Condensed","Helvetica Neue",sans-serif;
+  --sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--paper);font-family:var(--f-hud);font-size:16px;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
+#hudc{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--or);outline-offset:3px}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+#hurt,#holy,#white{position:fixed;inset:0;opacity:0;transition:opacity .12s linear}
+#hurt{background:radial-gradient(ellipse at center,transparent 45%,rgba(150,10,6,.85) 100%)}
+#holy{background:radial-gradient(ellipse at center,transparent 55%,rgba(220,176,88,.55) 100%)}
+#white{background:#fff4dc;transition:none}
+.hud-tl,.hud-tc,.hud-tr,.hud-bl,.hud-br{position:fixed;display:flex;flex-direction:column;gap:6px}
+.hud-tl{top:calc(14px + var(--st));left:calc(18px + var(--sl))}
+.hud-tc{top:calc(14px + var(--st));left:50%;transform:translateX(-50%);align-items:center;text-align:center}
+.hud-tr{top:calc(14px + var(--st));right:calc(18px + var(--sr));align-items:flex-end}
+.hud-bl{bottom:calc(18px + var(--sb));left:calc(18px + var(--sl));width:min(320px,40vw)}
+.hud-br{bottom:calc(18px + var(--sb));right:calc(18px + var(--sr));align-items:flex-end;text-align:right}
+.score{font-size:34px;font-weight:700;line-height:1;letter-spacing:.02em}
+.score small{font-size:14px;font-weight:600;color:var(--dim);margin-left:6px;letter-spacing:.12em;text-transform:uppercase}
+.kills{font-size:15px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+#feed{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.fi{font-size:15px;font-weight:600;background:var(--glass);padding:2px 8px;border-left:2px solid var(--paper);transition:opacity .6s, transform .6s;width:max-content;max-width:42vw}
+.fi.gold{border-color:var(--or);color:#f3d48c}
+.fi.blue{border-color:var(--bleu)}
+.fi.warn{border-color:var(--rouge);color:#ffb3aa}
+.fi.out{opacity:0;transform:translateX(-8px)}
+#wave-label{font-family:var(--f-title);font-size:34px;line-height:1;letter-spacing:.04em}
+#wave-sub{font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#powers{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.pw{font-size:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:2px 9px;border:1px solid currentColor;background:var(--glass)}
+.pw b{margin-left:6px;font-variant-numeric:tabular-nums}
+#pw-insta{color:#ff7a90}#pw-double{color:#ffd23a}#pw-rage{color:#ff9a4a}
+#t-next{pointer-events:auto;border:0;background:var(--or);color:#17130a;font-weight:700;font-size:15px;letter-spacing:.12em;text-transform:uppercase;padding:7px 14px;margin-top:2px;touch-action:none}
+body:not(.touch) #t-next{display:none}
+#bossbar{width:min(460px,70vw);margin-top:6px}
+#bossbar span{display:block;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--alien);margin-bottom:3px}
+.bar{height:9px;background:rgba(236,228,207,.14);position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0;transform-origin:left center;background:var(--paper);transition:transform .12s linear}
+.bar.thin{height:5px}
+#bossbar .bar i{background:var(--alien)}
+#radar{width:150px;height:150px;display:block}
+#place{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#squad{display:flex;flex-direction:column;gap:5px;margin-top:6px;width:150px}
+.mate{display:grid;grid-template-columns:1fr 70px;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.mate .bar{height:5px}
+.mate .bar i{background:var(--bleu)}
+.mate.down{color:var(--rouge)}
+.mate.down .bar i{background:var(--rouge)}
+#cname{font-family:var(--f-title);font-size:24px;line-height:1}
+.hp{display:flex;align-items:center;gap:10px}
+.hp .bar{flex:1;height:12px;clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+.hp.low .bar i{background:var(--rouge)}
+#hpnum{font-size:26px;font-weight:700;min-width:44px;text-align:right}
+.special{display:flex;align-items:center;gap:10px;margin-top:4px}
+#sp-key{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--rule);font-weight:700;font-size:17px}
+.special>div:last-child{flex:1}
+#sp-name{font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.special .bar i{background:var(--or)}
+.special.ready #sp-key{border-color:var(--or);color:var(--or);box-shadow:0 0 12px rgba(220,176,88,.45)}
+.special.ready #sp-name{color:var(--or)}
+#wname{font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ammo{display:flex;align-items:baseline;gap:6px;line-height:1}
+#mag{font-size:56px;font-weight:700}
+.ammo .sep{font-size:28px;color:var(--dim)}
+#res{font-size:26px;color:var(--dim);font-weight:600}
+.ammo.empty #mag{color:var(--rouge)}
+.slots{display:flex;gap:6px;align-items:center;font-size:15px;font-weight:700}
+.slots span{min-width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--rule);color:var(--dim);padding:0 6px}
+.slots span.on{border-color:var(--paper);color:var(--paper);background:rgba(236,228,207,.1)}
+.slots .gren{color:var(--paper);display:flex;gap:4px;align-items:center}
+#view{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#reloadhint{font-size:16px;font-weight:700;letter-spacing:.12em;color:var(--or);text-transform:uppercase}
+#banner{position:fixed;left:50%;top:24%;transform:translate(-50%,10px);text-align:center;opacity:0;transition:opacity .35s, transform .35s;width:min(92vw,760px)}
+#banner.show{opacity:1;transform:translate(-50%,0)}
+#banner-t{font-family:var(--f-title);font-size:clamp(34px,6vw,64px);line-height:1.05;text-wrap:balance}
+#banner-s{font-size:18px;letter-spacing:.06em;color:var(--paper);opacity:.85;margin-top:8px;text-wrap:balance}
+#banner.alien #banner-t{color:var(--alien)}
+#banner.gold #banner-t{color:var(--or)}
+/* streak and power-up call-outs: slam in, hold, drift up and fade */
+#announce{position:fixed;left:50%;top:36%;transform:translate(-50%,0);text-align:center;opacity:0;width:min(92vw,700px)}
+#announce.go{animation:slam 1.8s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes slam{0%{opacity:0;transform:translate(-50%,0) scale(1.7)}9%{opacity:1;transform:translate(-50%,0) scale(1)}72%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-18px) scale(1)}}
+#ann-t{font-size:clamp(34px,6.4vw,68px);font-weight:700;line-height:1;letter-spacing:.06em;text-transform:uppercase;color:var(--paper);text-shadow:0 3px 0 rgba(0,0,0,.75),0 0 28px rgba(0,0,0,.6)}
+#ann-s{font-size:15px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+#announce.gold #ann-t{color:var(--or);text-shadow:0 3px 0 rgba(0,0,0,.75),0 0 30px rgba(220,176,88,.55)}
+#announce.blue #ann-t{color:#9db8ff}
+#announce.insta #ann-t{color:#ff7a90}
+#announce.double #ann-t{color:#ffd23a}
+#announce.rage #ann-t{color:#ff9a4a}
+#announce.nuke #ann-t{color:#fff4dc;text-shadow:0 0 34px rgba(255,200,120,.9),0 3px 0 rgba(0,0,0,.7)}
+#combo{position:fixed;left:50%;top:calc(50% + 44px);transform:translateX(-50%);display:grid;justify-items:center;gap:3px}
+#combo .row{display:flex;align-items:baseline;gap:6px;font-weight:700}
+#combo-n{font-size:30px;line-height:1}
+#combo .lbl{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+#combo-x{font-style:normal;font-size:22px;color:var(--or)}
+#combo .bar{width:110px;height:3px}
+#combo .bar i{background:var(--or)}
+#prompt{position:fixed;left:50%;top:62%;transform:translateX(-50%);font-size:18px;font-weight:600;background:var(--glass);padding:6px 14px;border:1px solid var(--rule)}
+#lockhint{position:fixed;left:50%;bottom:calc(120px + var(--sb));transform:translateX(-50%);font-size:16px;background:var(--glass);padding:6px 12px;border:1px solid var(--rule)}
+
+/* ---------- touch controls ---------- */
+#touch{position:fixed;inset:0;pointer-events:none;font-family:var(--f-hud)}
+#stick{position:absolute;left:calc(96px + var(--sl));top:calc(100% - 104px - var(--sb));width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:2px solid rgba(236,228,207,.28);background:rgba(11,14,21,.28);opacity:.45;transition:opacity .15s}
+#stick.on{opacity:1}
+#knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(236,228,207,.32);border:2px solid rgba(236,228,207,.6)}
+.tb{pointer-events:auto;position:absolute;width:58px;height:58px;border-radius:50%;background:rgba(11,14,21,.52);border:1.5px solid rgba(236,228,207,.34);color:var(--paper);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:grid;place-items:center;touch-action:none;padding:0;line-height:1.05}
+.tb.down,.tb.on{background:rgba(236,228,207,.24);border-color:var(--paper)}
+.tb b{display:block;font-size:17px}
+#t-fire{width:96px;height:96px;right:calc(22px + var(--sr));bottom:calc(24px + var(--sb));border:2px solid var(--rouge);background:rgba(225,73,63,.26);font-size:16px}
+#t-fire.down{background:rgba(225,73,63,.5)}
+#t-aim{right:calc(128px + var(--sr));bottom:calc(20px + var(--sb))}
+#t-reload{right:calc(120px + var(--sr));bottom:calc(98px + var(--sb))}
+#t-jump{right:calc(34px + var(--sr));bottom:calc(132px + var(--sb))}
+#t-gren{right:calc(198px + var(--sr));bottom:calc(24px + var(--sb))}
+#t-special{right:calc(192px + var(--sr));bottom:calc(102px + var(--sb));width:64px;height:64px}
+#t-special.ready{border-color:var(--or);color:var(--or);box-shadow:0 0 14px rgba(220,176,88,.5)}
+#t-melee{right:calc(108px + var(--sr));bottom:calc(172px + var(--sb));width:54px;height:54px}
+#t-pause{top:calc(14px + var(--st));right:calc(128px + var(--sr));width:44px;height:44px;font-size:15px;letter-spacing:.02em}
+
+/* phones and tablets: compact the corners and keep the bottom free for thumbs */
+body.touch .hud-tl .score{font-size:26px}
+body.touch #feed{position:fixed;top:calc(128px + var(--st));left:calc(18px + var(--sl));margin:0;width:min(36vw,320px)}
+body.touch .fi{font-size:13px;max-width:36vw;width:auto}
+body.touch .slots .gren{display:none}
+body.touch #banner{top:20%}
+body.touch #banner-t{font-size:clamp(26px,5vw,40px)}
+body.touch #banner-s{font-size:13px}
+body.touch .hud-bl{top:calc(66px + var(--st));bottom:auto;width:min(210px,34vw);gap:4px}
+body.touch #cname{display:none}
+body.touch #sp-key{display:none}
+body.touch #sp-name{font-size:12px}
+body.touch #hpnum{font-size:20px}
+body.touch #radar{width:96px;height:96px}
+body.touch #squad,body.touch #view,body.touch #place{display:none}
+body.touch #wave-label{font-size:24px}
+body.touch #wave-sub{font-size:12px}
+body.touch .hud-br{right:calc(272px + var(--sr));bottom:calc(16px + var(--sb));gap:3px}
+body.touch #mag{font-size:34px}
+body.touch #res{font-size:18px}
+body.touch .ammo .sep{font-size:20px}
+body.touch #wname{font-size:12px}
+body.touch .slots{pointer-events:auto}
+body.touch .slots span{min-width:36px;height:32px}
+body.touch #announce{top:60%}
+body.touch #ann-t{font-size:clamp(28px,5vw,44px)}
+body.touch #ann-s{font-size:12px}
+body.touch #combo{top:calc(50% + 34px)}
+body.touch #prompt{top:auto;bottom:calc(150px + var(--sb));font-size:15px}
+@media (orientation:portrait){
+  body.touch .hud-br{right:calc(16px + var(--sr));bottom:calc(252px + var(--sb))}
+  body.touch #feed{top:calc(150px + var(--st));left:50%;transform:translateX(-50%);align-items:center;width:min(80vw,420px)}
+  body.touch .fi{max-width:80vw}
+  body.touch #banner{top:26%}
+  body.touch #announce{top:34%}
+  body.touch #t-pause{top:calc(118px + var(--st));right:calc(44px + var(--sr))}
+  body.touch .kills{display:none}
+}
+
+/* ---------- overlays ---------- */
+.overlay{position:fixed;inset:0;overflow-y:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(24px + var(--st)) calc(24px + var(--sb))}
+#menu{background:linear-gradient(90deg,rgba(11,14,21,.94) 0%,rgba(11,14,21,.84) 38%,rgba(11,14,21,.3) 58%,rgba(11,14,21,0) 70%)}
+.menu-in{max-width:620px;display:flex;flex-direction:column;gap:22px}
+.eyebrow{margin:0;font-size:14px;letter-spacing:.24em;text-transform:uppercase;color:var(--or)}
+.m-head h1{font-family:var(--f-title);font-weight:400;font-size:clamp(44px,6.2vw,84px);line-height:.95;margin:.12em 0 .14em;text-wrap:balance;text-shadow:0 2px 24px rgba(0,0,0,.6)}
+.lede{max-width:52ch;margin:0;font-size:18px;line-height:1.4;color:var(--paper);text-shadow:0 1px 8px rgba(0,0,0,.8)}
+.m-grid{display:flex;flex-direction:column;gap:14px}
+.start-row{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:10px;padding:16px 18px 18px;background:var(--glass);border:1px solid var(--rule);border-top:3px solid var(--rule);transition:border-color .2s, background .2s;min-width:0}
+.card:hover{background:rgba(20,24,34,.8)}
+.card:focus-visible{outline:2px solid var(--or);outline-offset:3px}
+.card[aria-checked="true"]{border-color:rgba(220,176,88,.55);border-top-color:var(--or);background:rgba(24,24,30,.86)}
+.c-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.c-name{font-family:var(--f-title);font-size:28px;line-height:1}
+.c-chip{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--or);opacity:0}
+.card[aria-checked="true"] .c-chip{opacity:1}
+.c-role{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.stats{display:flex;flex-direction:column;gap:5px}
+.st{display:grid;grid-template-columns:72px 1fr 56px;align-items:center;gap:8px;font-size:15px}
+.st i{height:5px;background:linear-gradient(90deg,var(--paper) calc(var(--v)*100%),rgba(236,228,207,.14) 0)}
+.st b{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.c-abil{font-size:15px;line-height:1.35;color:var(--paper);opacity:.9}
+.c-abil b{color:var(--or);font-weight:700;letter-spacing:.04em;margin-right:4px}
+.m-side{display:flex;flex-direction:column;gap:14px;background:var(--glass);border:1px solid var(--rule);padding:16px 18px 18px;min-width:0}
+.m-side h2{margin:0;font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.keys{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px;font-size:15px}
+.keys div{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px}
+.keys dt{font-weight:700;letter-spacing:.04em}
+.keys dd{margin:0;color:var(--dim)}
+.how{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:15px;line-height:1.35;color:var(--dim)}
+.how b{color:var(--paper);font-weight:700;letter-spacing:.03em}
+.touch-only{display:none}
+body.touch .touch-only{display:revert}
+body.touch .kb-only{display:none}
+.cta{border:0;background:var(--or);color:#17130a;font-weight:700;font-size:22px;letter-spacing:.14em;text-transform:uppercase;padding:14px 18px;clip-path:polygon(0 0,100% 0,calc(100% - 12px) 100%,0 100%);transition:filter .15s}
+.cta:hover{filter:brightness(1.1)}
+.ghost{border:1px solid var(--rule);background:transparent;font-size:18px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:12px 16px}
+.ghost:hover{border-color:var(--paper)}
+.best{margin:0;font-size:15px;color:var(--dim)}
+.overlay.center{display:flex;flex-direction:column;background:rgba(8,10,16,.72)}
+.overlay.center>.panel{margin:auto}
+.panel{width:min(560px,100%);box-sizing:border-box;background:var(--glass);border:1px solid var(--rule);border-top:3px solid var(--or);padding:24px;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-family:var(--f-title);font-weight:400;font-size:clamp(38px,7vw,52px);line-height:1;margin:0;text-wrap:balance}
+.panel p{margin:0;font-size:17px;color:var(--dim)}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.res{margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.res div{border-top:1px solid var(--rule);padding-top:6px;min-width:0}
+.res dt{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.res dd{margin:0;font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
+.res.small dd{font-size:24px}
+.rank{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.rank span{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.rank b{font-family:var(--f-title);font-weight:400;font-size:30px;color:var(--or)}
+#sharetext{width:100%;box-sizing:border-box;min-height:78px;background:rgba(0,0,0,.35);color:var(--paper);border:1px solid var(--rule);font:15px/1.4 var(--f-hud);padding:8px;resize:vertical;-webkit-user-select:text;user-select:text}
+#share-msg{font-size:15px;color:var(--or);min-height:1.2em}
+/* upgrade choice: three dossiers, slid over the street while the squad catches its breath */
+#perks{position:fixed;inset:0;display:flex;flex-direction:column;overflow-y:auto;background:linear-gradient(180deg,rgba(8,10,16,.15),rgba(8,10,16,.7) 40%,rgba(8,10,16,.7) 60%,rgba(8,10,16,.15));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(20px + var(--st)) calc(20px + var(--sb))}
+.perk-in{margin:auto;width:min(940px,100%);display:flex;flex-direction:column;gap:14px;animation:rise .35s ease-out}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.perk-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
+#perk-title{margin:0;font-family:var(--f-title);font-weight:400;font-size:clamp(28px,4.2vw,42px);line-height:1;text-wrap:balance}
+#perk-hint{margin:0;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--or)}
+#perk-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.perk{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr auto;gap:8px 12px;padding:16px 18px 18px;background:rgba(14,17,26,.9);border:1px solid var(--rule);border-top:3px solid var(--or);transition:background .15s,transform .15s;min-width:0}
+.perk:hover,.perk:focus-visible{background:rgba(30,30,38,.95);transform:translateY(-3px)}
+.perk:focus-visible{outline:2px solid var(--or);outline-offset:3px}
+.pk-key{grid-row:1;grid-column:1;width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--or);color:var(--or);font-weight:700;font-size:17px}
+.pk-name{grid-row:1;grid-column:2;align-self:center;font-family:var(--f-title);font-size:26px;line-height:1}
+.pk-desc{grid-row:2;grid-column:1 / -1;font-size:17px;line-height:1.35;color:var(--paper)}
+.pk-lv{grid-row:3;grid-column:1 / -1;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+body.touch .pk-key{display:none}
+body.touch .pk-name{grid-column:1 / -1}
+.set{display:flex;flex-direction:column;gap:14px;margin:0}
+.set label{display:grid;grid-template-columns:150px minmax(0,1fr) 54px;align-items:center;gap:10px;font-size:17px}
+.set label.chk{grid-template-columns:150px auto 1fr}
+.set output{text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.set input[type=range]{width:100%;accent-color:var(--or)}
+.set input[type=checkbox]{width:22px;height:22px;accent-color:var(--or)}
+.set select{background:rgba(0,0,0,.4);color:var(--paper);border:1px solid var(--rule);font:17px var(--f-hud);padding:6px 8px}
+.set small{grid-column:2 / -1;color:var(--dim);font-size:14px}
+@media (max-width:900px){
+  #menu{background:rgba(11,14,21,.8)}
+  .menu-in{max-width:none}
+}
+@media (max-width:700px){
+  #perk-cards{grid-template-columns:1fr}
+  .perk{grid-template-rows:auto auto auto}
+}
+@media (max-width:560px){
+  /* phones: short hero cards so "Defend Paris" sits in the first screen */
+  .menu-in{gap:16px}
+  .m-head h1{font-size:44px}
+  .lede{font-size:16px}
+  .cards{grid-template-columns:1fr 1fr;gap:10px}
+  .card{padding:12px 12px 14px;gap:6px}
+  .c-name{font-size:22px}
+  .c-chip,.stats,.c-abil+.c-abil{display:none}
+  .c-role{font-size:12px;letter-spacing:.1em}
+  .c-abil{font-size:14px}
+  .res{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .keys{grid-template-columns:1fr}
+  .set label,.set label.chk{grid-template-columns:1fr auto}
+  .set label input[type=range]{grid-column:1 / -1;grid-row:2}
+  .set small{grid-column:1 / -1}
+}
+@media (prefers-reduced-motion:reduce){
+  #banner,.fi,.bar i{transition:none}
+  #announce.go{animation:fade 1.8s linear forwards}
+  @keyframes fade{0%,75%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,0)}}
+  .perk-in{animation:none}
+}
+</style>
+
+</head>
+<body>
+<canvas id="gl" tabindex="-1"></canvas>
+<canvas id="hudc"></canvas>
+
+<div id="hud" hidden>
+  <div id="hurt"></div><div id="holy"></div><div id="white"></div>
+  <div class="hud-tl">
+    <div class="score"><span id="score">0</span><small>points</small></div>
+    <div class="kills"><span id="kills">0</span> kills · <span id="heads">0</span> headshots</div>
+    <div id="feed"></div>
+  </div>
+  <div class="hud-tc">
+    <div id="wave-label">Wave 1</div>
+    <div id="wave-sub"></div>
+    <div id="powers">
+      <span class="pw" id="pw-insta" hidden>Insta-Kill<b id="pw-insta-t">0</b></span>
+      <span class="pw" id="pw-double" hidden>Double Points<b id="pw-double-t">0</b></span>
+      <span class="pw" id="pw-rage" hidden>Rage<b id="pw-rage-t">0</b></span>
+    </div>
+    <button id="t-next" hidden>Start wave now</button>
+    <div id="bossbar" hidden><span>Invasion Commander</span><div class="bar"><i id="bossfill"></i></div></div>
+  </div>
+  <div class="hud-tr">
+    <canvas id="radar" width="300" height="300"></canvas>
+    <div id="place">Place de la Concorde</div>
+    <div id="squad"></div>
+  </div>
+  <div class="hud-bl">
+    <div id="cname">Napoleon</div>
+    <div class="hp" id="hpbox"><div class="bar"><i id="hpfill"></i></div><span id="hpnum">100</span></div>
+    <div class="special" id="spbox"><div id="sp-key">Q</div><div><div id="sp-name">Artillery</div><div class="bar thin"><i id="spfill"></i></div></div></div>
+  </div>
+  <div class="hud-br">
+    <div id="wname">FAMAS</div>
+    <div class="ammo" id="ammobox"><span id="mag">30</span><span class="sep">/</span><span id="res">240</span></div>
+    <div class="slots"><span data-s="0">1</span><span data-s="1">2</span><span data-s="2">3</span><span class="gren">G · <b id="gren">4</b></span></div>
+    <div id="view">T · third person</div>
+    <div id="reloadhint" hidden>R · reload</div>
+  </div>
+  <div id="banner"><div id="banner-t"></div><div id="banner-s"></div></div>
+  <div id="announce"><div id="ann-t"></div><div id="ann-s"></div></div>
+  <div id="combo" hidden><div class="row"><b id="combo-n">0</b><span class="lbl">streak</span><em id="combo-x"></em></div><div class="bar"><i id="combo-fill"></i></div></div>
+  <div id="prompt" hidden></div>
+  <div id="lockhint" hidden>Click the game to lock the mouse. Without the lock, push the cursor to a screen edge to turn.</div>
+</div>
+
+<div id="touch" hidden>
+  <div id="stick"><div id="knob"></div></div>
+  <button class="tb" id="t-fire" aria-label="Fire">Fire</button>
+  <button class="tb" id="t-aim" aria-label="Aim down sights">Aim</button>
+  <button class="tb" id="t-reload" aria-label="Reload">Reload</button>
+  <button class="tb" id="t-jump" aria-label="Jump">Jump</button>
+  <button class="tb" id="t-gren" aria-label="Throw grenade"><span>Nade<b id="t-gren-n">4</b></span></button>
+  <button class="tb" id="t-special" aria-label="Hero ability">Ability</button>
+  <button class="tb" id="t-melee" aria-label="Melee">Melee</button>
+  <button class="tb" id="t-pause" aria-label="Pause">II</button>
+</div>
+
+<div id="perks" hidden>
+  <div class="perk-in">
+    <div class="perk-head"><h2 id="perk-title">Choose an upgrade</h2><p id="perk-hint">Press 1, 2 or 3</p></div>
+    <div id="perk-cards"></div>
+  </div>
+</div>
+
+<div id="menu" class="overlay">
+  <div class="menu-in">
+    <header class="m-head">
+      <p class="eyebrow">Paris · night of the invasion · Place de la Concorde</p>
+      <h1>Défense de Paris</h1>
+      <p class="lede">Zombies are pouring through the streets and an alien ship hangs over the Eiffel Tower. Pick a hero, take three squadmates and hold the square wave after wave. Every cleared wave earns an upgrade.</p>
+    </header>
+    <div class="m-grid">
+      <div class="cards" role="radiogroup" aria-label="Choose your hero">
+        <button class="card" id="pick-napoleon" role="radio" aria-checked="true" data-char="napoleon">
+          <span class="c-top"><span class="c-name">Napoleon</span><span class="c-chip">Selected</span></span>
+          <span class="c-role">General · squad leader</span>
+          <span class="stats">
+            <span class="st"><span>Health</span><i style="--v:.62"></i><b>100</b></span>
+            <span class="st"><span>Speed</span><i style="--v:.92"></i><b>6.6 m/s</b></span>
+            <span class="st"><span>Armor</span><i style="--v:0"></i><b>0%</b></span>
+          </span>
+          <span class="c-abil"><b>Artillery</b>Eight cannonballs land where you aim. Recharges in 35 s.</span>
+          <span class="c-abil"><b>Command</b>Your squadmates hit 35% harder and you reload 20% faster.</span>
+          <span class="c-abil"><b>Sabre</b>A quick slash up close.</span>
+        </button>
+        <button class="card" id="pick-crusader" role="radio" aria-checked="false" data-char="crusader">
+          <span class="c-top"><span class="c-name">The Crusader</span><span class="c-chip">Selected</span></span>
+          <span class="c-role">Knight · hardest to kill</span>
+          <span class="stats">
+            <span class="st"><span>Health</span><i style="--v:1"></i><b>160</b></span>
+            <span class="st"><span>Speed</span><i style="--v:.8"></i><b>6.0 m/s</b></span>
+            <span class="st"><span>Armor</span><i style="--v:.4"></i><b>20%</b></span>
+          </span>
+          <span class="c-abil"><b>Holy Wrath</b>A shockwave throws back and wounds everything around you. You get 50 health and 5 s of invulnerability. Recharges in 28 s.</span>
+          <span class="c-abil"><b>Chain mail</b>Every hit hurts you 20% less.</span>
+          <span class="c-abil"><b>Longsword</b>The strongest melee strike in the game.</span>
+        </button>
+      </div>
+      <div class="start-row">
+        <button id="start" class="cta">Defend Paris</button>
+        <button id="opt-menu" class="ghost">Settings</button>
+        <p id="best" class="best"></p>
+      </div>
+      <aside class="m-side">
+        <h2>How to survive</h2>
+        <ul class="how">
+          <li><b>Streaks.</b> Kills less than 3 seconds apart build a streak. At 5, 10, 20 and 35 kills your points multiply.</li>
+          <li><b>Upgrades.</b> After every wave pick one of three upgrades. They stack, so plan a build.</li>
+          <li><b>Pickups.</b> Enemies drop health, ammo and grenades. Rare glowing pillars are power-ups: Insta-Kill, Double Points, Rage, Max Ammo and the Nuke.</li>
+          <li><b>Bloaters.</b> Green, swollen zombies burst when they die. Pop one inside a crowd.</li>
+        </ul>
+      </aside>
+      <aside class="m-side kb-only">
+        <h2>Controls</h2>
+        <dl class="keys">
+          <div><dt>W A S D</dt><dd>move, Shift to sprint</dd></div>
+          <div><dt>Mouse</dt><dd>aim</dd></div>
+          <div><dt>Left button</dt><dd>fire</dd></div>
+          <div><dt>Right button</dt><dd>sights and scope</dd></div>
+          <div><dt>1 2 3 / wheel</dt><dd>rifle, sniper, flamethrower</dd></div>
+          <div><dt>R · G · V</dt><dd>reload · grenade · melee</dd></div>
+          <div><dt>Q</dt><dd>hero ability</dd></div>
+          <div><dt>T</dt><dd>third or first person</dd></div>
+          <div><dt>Hold E</dt><dd>revive a squadmate</dd></div>
+          <div><dt>Enter</dt><dd>start the next wave early</dd></div>
+          <div><dt>Space · M</dt><dd>jump · music on or off</dd></div>
+          <div><dt>Esc</dt><dd>pause</dd></div>
+        </dl>
+      </aside>
+      <aside class="m-side touch-only">
+        <h2>Touch controls</h2>
+        <dl class="keys">
+          <div><dt>Left thumb</dt><dd>move, push to the edge to sprint</dd></div>
+          <div><dt>Right thumb</dt><dd>drag to aim</dd></div>
+          <div><dt>Fire</dt><dd>hold, and slide to aim while shooting</dd></div>
+          <div><dt>Auto-fire</dt><dd>shoots when the crosshair is on an enemy</dd></div>
+          <div><dt>1 2 3</dt><dd>tap to change weapon</dd></div>
+          <div><dt>Revive</dt><dd>stand next to a downed squadmate</dd></div>
+        </dl>
+        <p class="best">Landscape gives you the widest view.</p>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div id="pause" class="overlay center" hidden>
+  <div class="panel">
+    <p class="eyebrow">Paused</p>
+    <h2>Game paused</h2>
+    <p id="pause-hint">Press Continue and the mouse locks back into the game.</p>
+    <p id="pause-perks"></p>
+    <div class="row"><button id="resume" class="cta">Continue</button><button id="opt-pause" class="ghost">Settings</button><button id="tomenu" class="ghost">Main menu</button></div>
+  </div>
+</div>
+
+<div id="settings" class="overlay center" hidden>
+  <div class="panel">
+    <p class="eyebrow">Saved in this browser</p>
+    <h2>Settings</h2>
+    <div class="set">
+      <label for="set-sens">Aim sensitivity<input type="range" id="set-sens" min="0.3" max="3" step="0.05"><output id="set-sens-v"></output></label>
+      <label for="set-vol">Volume<input type="range" id="set-vol" min="0" max="1" step="0.05"><output id="set-vol-v"></output></label>
+      <label class="chk" for="set-music">Music<input type="checkbox" id="set-music"><span></span></label>
+      <label class="chk" for="set-auto">Auto-fire<input type="checkbox" id="set-auto"><small>Touch screens only. The gun fires while the crosshair is on an enemy.</small></label>
+      <label for="set-q">Graphics<select id="set-q"><option value="auto">Auto</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select><span></span></label>
+    </div>
+    <div class="row"><button id="set-done" class="cta" type="button">Done</button></div>
+  </div>
+</div>
+
+<div id="over" class="overlay center" hidden>
+  <div class="panel">
+    <p class="eyebrow">Game over</p>
+    <h2 id="o-title">Paris has fallen</h2>
+    <div class="rank"><span>Rank</span><b id="o-rank">Conscript</b></div>
+    <dl class="res">
+      <div><dt>Wave</dt><dd id="o-wave">0</dd></div>
+      <div><dt>Score</dt><dd id="o-score">0</dd></div>
+      <div><dt>Kills</dt><dd id="o-kills">0</dd></div>
+      <div><dt>Headshots</dt><dd id="o-heads">0</dd></div>
+    </dl>
+    <dl class="res small">
+      <div><dt>Best streak</dt><dd id="o-streak">0</dd></div>
+      <div><dt>Accuracy</dt><dd id="o-acc">0%</dd></div>
+      <div><dt>Time</dt><dd id="o-time">0:00</dd></div>
+    </dl>
+    <p id="o-best"></p>
+    <div class="row"><button id="again" class="cta">Play again</button><button id="share" class="ghost">Share score</button><button id="change" class="ghost">Change hero</button></div>
+    <textarea id="sharetext" readonly hidden aria-label="Score to copy"></textarea>
+    <p id="share-msg" role="status"></p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/world.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/models.js"></script>
+<script src="js/actors.js"></script>
+<script src="js/game.js"></script>
+
+</body>
+</html>
