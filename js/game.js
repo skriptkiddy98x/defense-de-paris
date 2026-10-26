@@ -106,6 +106,7 @@ const magSize = i => Math.round(WEAPONS[i].mag * P.mods.mag);
 
 // ---------- setup ----------
 function init() {
+  count('visits');
   const canvas = $('gl');
   G.touch = matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches;
   renderer = new THREE.WebGLRenderer({ canvas, antialias: !G.touch, powerPreference: 'high-performance' });
@@ -325,6 +326,17 @@ function bindSettings() {
 }
 
 // ---------- game flow ----------
+// anonymous play counter on the public site: it only bumps shared tallies (no cookies, IDs or player data are sent)
+const STATS = 'https://abacus.jasoncameron.dev/hit/defend-paris-game/';
+const statsOn = location.protocol === 'https:' && !/localhost|127\.0\.0\.1|claude/.test(location.hostname);
+function count(key) {
+  if (!statsOn || window.CAPTURE) return;
+  try { fetch(STATS + key, { credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true }).catch(() => { }); } catch (e) { }
+}
+function countPlay() {
+  count('games');
+  try { if (!localStorage.getItem('ddp-played')) { localStorage.setItem('ddp-played', '1'); count('players'); } } catch (e) { }
+}
 function clearWorld() {
   for (const e of G.enemies) scene.remove(e.root);
   for (const m of G.mates) scene.remove(m.root);
@@ -337,6 +349,7 @@ function clearWorld() {
 }
 function startGame() {
   SFX.init();
+  countPlay();
   clearWorld();
   const ch = CHARS[G.sel];
   Object.assign(P, {
@@ -466,6 +479,7 @@ function startWave(n) {
   const from = G.arms.map(a => World.STREETS[a]).join(', ');
   banner(`Wave ${n}`, `Zombies attacking from ${from}` + (n >= 3 ? ' · aliens are landing in the streets' : ''));
   SFX.horn();
+  if (n === 5 || n === 10) count('wave' + n);
   for (const [t, h] of HINTS[n] || []) G.later(t, () => { if (G.state === 'play' && G.wave === n) G.feed(typeof h === 'function' ? h() : h, 'gold'); });
 }
 function spawnEnemy(type) {

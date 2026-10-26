@@ -41,3 +41,7 @@ python -m http.server 8000
 ```
 
 Then open http://localhost:8000.
+
+## Privacy
+
+On the published site the game bumps a few anonymous counters at [Abacus](https://abacus.jasoncameron.dev) (page opened, game started, first game on this device, waves 5 and 10 reached). It sends no cookies, IDs or player data, and nothing is counted when you run it locally.
